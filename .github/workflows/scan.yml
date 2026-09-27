@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: "*/15 * * * *"   # every 15 min (GitHub may start runs a few minutes late)
   workflow_dispatch:          # "Run workflow" button for a manual scan
+  push:
+    branches: [main]          # scan straight away with newly pushed settings
 
 # Never run two scans at once - they'd share state and could double-send alerts.
 concurrency:
