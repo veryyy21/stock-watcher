@@ -237,7 +237,7 @@ async function load() {
   $("#status").innerHTML =
     `<span class="dot" style="background:${ls ? "var(--good)" : "var(--warn)"}"></span>` +
     `Last scan <b>${ago(ls && ls.finished)}</b> · every ${st.interval_minutes} min · ${assets.length} assets · ` +
-    (st.discord_configured ? "Discord alerts <b>on</b>" : `<span style="color:var(--warn)">Discord not set up (add webhook to .env)</span>`) +
+    (st.discord_configured ? "Discord alerts <b>on</b>" : "Discord alerts sent from GitHub (off on this machine)") +
     (ls && ls.missing && ls.missing.length ? ` · no data for ${ls.missing.join(", ")}` : "");
   if (!$("#mktChips").children.length) {
     $("#mktChips").innerHTML = st.markets.map(m => `<span class="chip" data-mkt="${m}">${m}</span>`).join(" ");
