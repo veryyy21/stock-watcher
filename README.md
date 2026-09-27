@@ -48,6 +48,21 @@ its dashboard still works when the laptop is on.
 | Stable | Calmest 35% of its market, worst 1-year drop ≤ 20%, above 200-day average |
 | Falling | ≥20% below high, below 200-day average, down over the last month |
 
+## Daily summary (with charts)
+
+On trading days Discord gets a summary with three charts: the S&P 500, ASX 200 and
+Bitcoin over 3 months, today's moves for that market, and 6-month price charts of the
+top rebound candidates.
+
+| Summary | Market time | Melbourne time |
+|---|---|---|
+| ASX open | 10:20 Sydney | 10:20 am Mon–Fri |
+| US close | 16:20 New York | about 6–7 am Tue–Sat (shifts with daylight saving) |
+
+Skipped on weekends and market holidays. Times, benchmarks and your time zone are
+in `config.yaml` under `digest:`. To preview one now: GitHub → Actions → Market scan →
+**Run workflow** → pick a summary → Run.
+
 ## Alerts sent
 
 Entered rebound / stable bucket · RSI crossed below 30 · RSI recovered above 30 ·

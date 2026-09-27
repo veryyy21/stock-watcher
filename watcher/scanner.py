@@ -3,7 +3,7 @@ import logging
 import threading
 import time
 
-from . import analysis, data, indicators, notify, store
+from . import analysis, data, digest, indicators, notify, store
 
 log = logging.getLogger(__name__)
 
@@ -86,6 +86,8 @@ def _scan(cfg: dict) -> dict:
         lines = [f"{EMOJI.get(ev, '•')} **{r['ticker']}** ({r['market']}) {r['price']:,.2f} — {msg}"
                  for r, ev, msg in new_alerts]
         notify.send_discord(lines, header=f"**Stock Watcher — {len(new_alerts)} new signal(s)**")
+
+    digest.maybe_send(cfg, rows, hist)
 
     result = {
         "status": "ok",

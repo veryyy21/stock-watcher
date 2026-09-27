@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "*/15 * * * *"   # every 15 min (GitHub may start runs a few minutes late)
   workflow_dispatch:          # "Run workflow" button for a manual scan
+    inputs:
+      digest:
+        description: "Also send a daily summary now (preview)"
+        type: choice
+        default: none
+        options: [none, ASX open, US close]
   push:
     branches: [main]          # scan straight away with newly pushed settings
 
@@ -40,6 +46,7 @@ jobs:
       - name: Scan and alert
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DIGEST_FORCE: ${{ inputs.digest }}
         run: python run_once.py
 
       - name: Save state

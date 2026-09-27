@@ -31,6 +31,25 @@ rules:
     max_1y_drawdown_pct: 20         # never fell more than this in the past year
     require_above_sma200: true
 
+# Daily summary with charts, sent to Discord on trading days.
+# Each time is in that market's own time zone, so daylight saving is handled automatically.
+digest:
+  enabled: true
+  your_timezone: Australia/Melbourne   # only used to show "your time" in the message
+  benchmarks:                          # market index shown in the "Markets" chart
+    S&P 500: ^GSPC
+    ASX 200: ^AXJO
+    Bitcoin: BTC-USD
+  slots:
+    - name: ASX open
+      market: ASX
+      timezone: Australia/Sydney
+      at: "10:20"                      # 20 min after the open, once prices have settled a bit
+    - name: US close
+      market: US
+      timezone: America/New_York
+      at: "16:20"                      # just after the close (about 6-7 am in Australia)
+
 alerts:
   # Alert when the 1-day move is bigger than this many "normal" daily moves.
   big_move_sigma: 2.5

@@ -7,3 +7,5 @@ pyyaml
 requests
 python-dotenv
 certifi
+matplotlib
+tzdata

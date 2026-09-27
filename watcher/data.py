@@ -19,7 +19,8 @@ def session():
     return _session
 
 
-def fetch_history(tickers: list[str], period: str = "1y") -> dict[str, pd.DataFrame]:
+def fetch_history(tickers: list[str], period: str = "2y") -> dict[str, pd.DataFrame]:
+    # 2 years so the 200-day average is fully formed across every chart window.
     """Download daily OHLCV for many tickers in one request.
 
     Returns {ticker: DataFrame[Open, High, Low, Close, Volume]}; tickers that
