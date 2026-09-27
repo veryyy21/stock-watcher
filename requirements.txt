@@ -1,0 +1,9 @@
+yfinance>=1.7
+curl_cffi
+pandas
+numpy
+flask
+pyyaml
+requests
+python-dotenv
+certifi

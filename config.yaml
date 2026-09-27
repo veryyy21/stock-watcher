@@ -1,0 +1,45 @@
+# Stock Watcher configuration
+# Edit this file, then restart the app (start.bat) for changes to apply.
+
+# How often to re-scan the market (minutes). yfinance is free but rate-limited,
+# so don't go much below 10.
+scan_interval_minutes: 15
+
+# Dashboard address. Open http://127.0.0.1:5000 in your browser.
+host: 127.0.0.1
+port: 5000
+
+# Tickers use Yahoo Finance symbols: ASX = ".AX" suffix, crypto = "-USD" suffix.
+watchlist:
+  US:
+    [AAPL, MSFT, NVDA, GOOGL, AMZN, META, TSLA, AVGO, AMD, NFLX,
+     JPM, BAC, V, MA, UNH, LLY, JNJ, PG, KO, PEP, WMT, COST, HD, XOM, DIS]
+  ASX:
+    [CBA.AX, BHP.AX, CSL.AX, NAB.AX, WBC.AX, ANZ.AX, MQG.AX, WES.AX,
+     WOW.AX, TLS.AX, RIO.AX, FMG.AX, GMG.AX, TCL.AX, WDS.AX]
+  Crypto:
+    [BTC-USD, ETH-USD, SOL-USD, XRP-USD, BNB-USD, ADA-USD, DOGE-USD]
+
+# Rules that decide which bucket each asset lands in.
+rules:
+  rebound:
+    min_drawdown_pct: 10     # at least this far below its 52-week high
+    max_rsi: 40              # RSI(14) at or below this = oversold-ish
+    require_above_sma200: true  # only dips inside a long-term uptrend
+  stable:
+    max_volatility_percentile: 35   # calmest third of its own market
+    max_1y_drawdown_pct: 20         # never fell more than this in the past year
+    require_above_sma200: true
+
+alerts:
+  # Alert when the 1-day move is bigger than this many "normal" daily moves.
+  big_move_sigma: 2.5
+  # Which events trigger a Discord message.
+  enabled:
+    entered_rebound: true    # asset newly qualifies as a rebound candidate
+    entered_stable: true     # asset newly qualifies as stable
+    rsi_oversold: true       # RSI crossed below 30
+    rsi_recovery: true       # RSI crossed back above 30 (bounce confirmation)
+    golden_cross: true       # 50-day average crossed above 200-day
+    death_cross: true        # 50-day average crossed below 200-day
+    big_move: true           # unusually large daily move

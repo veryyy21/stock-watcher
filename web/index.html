@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stock Watcher</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --surface: #ffffff; --ink: #1b1f24; --ink-2: #57606a; --ink-3: #8c959f;
+    --line: #e3e6ea; --accent: #2f5bd3; --accent-ink: #fff;
+    --good: #1a7f37; --bad: #c62a2f; --warn: #9a6700;
+    --chip: #eef1f5; --spark: #57606a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1216; --surface: #171b21; --ink: #e6e9ed; --ink-2: #a3acb7; --ink-3: #6f7985;
+      --line: #2a3038; --accent: #6d8ff0; --accent-ink: #0f1216;
+      --good: #4cc26a; --bad: #f2676b; --warn: #d9a93b;
+      --chip: #222830; --spark: #a3acb7;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { padding: 20px 24px 8px; max-width: 1300px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+  h1 { font-size: 20px; margin: 0; letter-spacing: -.01em; }
+  .status { color: var(--ink-2); font-size: 13px; }
+  .status b { color: var(--ink); font-weight: 600; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+           padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+  button:hover { border-color: var(--ink-3); }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  main { padding: 0 24px 40px; max-width: 1300px; margin: 0 auto; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 12px 0 20px; }
+  .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; cursor: pointer; }
+  .tile.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+  .tile .n { font-size: 28px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .tile .l { color: var(--ink-2); font-size: 13px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .chip { background: var(--chip); border: 1px solid transparent; border-radius: 999px; padding: 4px 12px; cursor: pointer; color: var(--ink-2); }
+  .chip.on { background: var(--surface); border-color: var(--ink-3); color: var(--ink); }
+  input[type=search] { font: inherit; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px;
+                       background: var(--surface); color: var(--ink); min-width: 160px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow-x: auto; }
+  .blurb { color: var(--ink-2); font-size: 13px; margin: 0 0 12px; max-width: 820px; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { padding: 9px 12px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+  th { font-weight: 600; font-size: 12px; color: var(--ink-2); cursor: pointer; user-select: none; position: sticky; top: 0; background: var(--surface); }
+  th:hover { color: var(--ink); }
+  th.l, td.l { text-align: left; }
+  tr:last-child td { border-bottom: 0; }
+  td.why { white-space: normal; color: var(--ink-2); font-size: 12.5px; min-width: 220px; max-width: 360px; }
+  .tk { font-weight: 650; }
+  .mk { color: var(--ink-3); font-size: 12px; margin-left: 6px; }
+  .up { color: var(--good); } .dn { color: var(--bad); }
+  .score { display: inline-block; min-width: 34px; padding: 1px 6px; border-radius: 6px; background: var(--chip); font-weight: 600; text-align: center; }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px; margin-left: 4px; background: var(--chip); color: var(--ink-2); }
+  svg.spark { display: block; }
+  svg.spark polyline { fill: none; stroke: var(--spark); stroke-width: 1.5; stroke-linejoin: round; }
+  svg.spark .hl { fill: var(--ink); }
+  #tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--bg); font-size: 12px;
+         padding: 4px 8px; border-radius: 6px; display: none; z-index: 10; white-space: nowrap; }
+  .empty { padding: 32px; text-align: center; color: var(--ink-2); }
+  .alert-ev { font-size: 12px; color: var(--ink-2); }
+  footer { color: var(--ink-3); font-size: 12px; margin-top: 24px; max-width: 820px; }
+  @media (max-width: 640px) { header, main { padding-left: 16px; padding-right: 16px; } }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Stock Watcher</h1>
+    <div class="status" id="status">Loading…</div>
+  </div>
+  <div style="display:flex; gap:8px">
+    <button id="testBtn" title="Send a test message to your Discord webhook">Test Discord</button>
+    <button id="scanBtn" class="primary">Scan now</button>
+  </div>
+</header>
+<main>
+  <div class="tiles" id="tiles"></div>
+  <p class="blurb" id="blurb"></p>
+  <div class="controls">
+    <span class="chip on" data-mkt="">All markets</span>
+    <span id="mktChips"></span>
+    <input type="search" id="q" placeholder="Filter ticker…">
+  </div>
+  <div class="card" id="tableCard"></div>
+  <footer>
+    Signals are rule-based technical indicators calculated from Yahoo Finance daily prices (may be delayed ~15 min).
+    They describe price patterns, they are not forecasts or financial advice. Always do your own research.
+  </footer>
+</main>
+<div id="tip"></div>
+
+<script>
+const VIEWS = {
+  rebound:   { label: "Rebound candidates", sort: "rebound_score",
+               blurb: "Down meaningfully from their 52-week high and oversold (low RSI), but still above their 200-day average — dips inside a longer uptrend. Higher score = deeper oversold + momentum starting to turn up." },
+  stable:    { label: "Stable", sort: "stability_score",
+               blurb: "The calmest assets in their own market: low volatility, shallow drawdowns over the past year, and trading above their 200-day average." },
+  downtrend: { label: "Falling (avoid for now)", sort: "drawdown", asc: true,
+               blurb: "More than 20% off their high, below their 200-day average, and still falling this month. Cheap-looking, but the trend is down — these are the classic 'falling knives'." },
+  all:       { label: "All watched", sort: "chg_1d",
+               blurb: "Everything on your watchlist. Edit config.yaml to add or remove tickers." },
+  alerts:    { label: "Alert log", blurb: "Every signal that has been sent (or would have been sent) to Discord, newest first." },
+};
+let assets = [], alertRows = [], view = "rebound", market = "", sortKey = null, sortAsc = false;
+
+const $ = s => document.querySelector(s);
+const pct = (v, d = 1) => v == null ? "–" : (v * 100).toFixed(d) + "%";
+const signed = v => {
+  if (v == null) return "–";
+  const cls = v > 0 ? "up" : v < 0 ? "dn" : "";
+  const arrow = v > 0 ? "▲" : v < 0 ? "▼" : "";
+  return `<span class="${cls}">${arrow} ${Math.abs(v * 100).toFixed(1)}%</span>`;
+};
+const price = v => v >= 1000 ? v.toLocaleString(undefined, {maximumFractionDigits: 0})
+                 : v >= 1 ? v.toFixed(2) : v.toPrecision(3);
+const ago = iso => {
+  if (!iso) return "never";
+  const m = Math.round((Date.now() - new Date(iso)) / 60000);
+  return m < 1 ? "just now" : m < 60 ? `${m} min ago` : `${Math.round(m / 60)} h ago`;
+};
+
+function why(a) {
+  const bits = [];
+  const t = VIEWS[view].sort && view !== "all" ? view : a.tags[0];
+  if (t === "rebound") {
+    bits.push(`${Math.abs(a.drawdown * 100).toFixed(0)}% below 52w high`, `RSI ${a.rsi.toFixed(0)}`);
+    if (a.bounce_rsi) bits.push("RSI turning up");
+    if (a.bounce_macd) bits.push("selling momentum fading");
+  } else if (t === "stable") {
+    bits.push(`volatility ${(a.volatility * 100).toFixed(0)}%/yr`, `worst 1y drop ${pct(a.max_drawdown_1y, 0)}`);
+  } else if (t === "downtrend") {
+    bits.push(`${pct(a.drawdown, 0)} from high`, `1m ${pct(a.chg_1m, 0)}`, "below 200-day avg");
+  } else {
+    bits.push(`RSI ${a.rsi.toFixed(0)}`, a.sma200 && a.price > a.sma200 ? "above 200-day avg" : "below 200-day avg");
+  }
+  return bits.join(" · ");
+}
+
+function spark(a) {
+  const s = a.spark, w = 110, h = 28, min = Math.min(...s), max = Math.max(...s);
+  const x = i => (i / (s.length - 1)) * (w - 4) + 2;
+  const y = v => h - 3 - ((v - min) / (max - min || 1)) * (h - 6);
+  const pts = s.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  return `<svg class="spark" width="${w}" height="${h}" data-t="${a.ticker}" aria-label="90-day price trend">
+    <polyline points="${pts}"/><circle class="hl" r="3" cx="-10" cy="-10"/></svg>`;
+}
+
+function rowsFor(v) {
+  let r = assets.filter(a => !market || a.market === market);
+  const q = $("#q").value.trim().toUpperCase();
+  if (q) r = r.filter(a => a.ticker.includes(q));
+  if (v !== "all") r = r.filter(a => a.tags.includes(v));
+  return r;
+}
+
+function renderTiles() {
+  $("#tiles").innerHTML = Object.entries(VIEWS).map(([k, v]) => {
+    const n = k === "alerts" ? alertRows.length : rowsFor(k).length;
+    return `<div class="tile ${k === view ? "active" : ""}" data-view="${k}"><div class="n">${n}</div><div class="l">${v.label}</div></div>`;
+  }).join("");
+  document.querySelectorAll(".tile").forEach(t => t.onclick = () => { view = t.dataset.view; sortKey = null; render(); });
+}
+
+function renderTable() {
+  $("#blurb").textContent = VIEWS[view].blurb;
+  if (view === "alerts") return renderAlerts();
+  const cfg = VIEWS[view];
+  const key = sortKey || cfg.sort, asc = sortKey ? sortAsc : !!cfg.asc;
+  const cmp = (a, b) => typeof a[key] === "string" ? a[key].localeCompare(b[key]) : (a[key] ?? -1e9) - (b[key] ?? -1e9);
+  const rows = rowsFor(view).sort((a, b) => cmp(a, b) * (asc ? 1 : -1));
+  if (!rows.length) {
+    $("#tableCard").innerHTML = `<div class="empty">${assets.length ? "Nothing in this bucket right now." : "Waiting for the first scan… (takes ~30 s)"}</div>`;
+    return;
+  }
+  const scoreKey = view === "stable" ? "stability_score" : "rebound_score";
+  const cols = [
+    ["ticker", "Asset", "l"], ["price", "Price"], ["chg_1d", "1D"], ["chg_1m", "1M"], ["chg_3m", "3M"],
+    ["drawdown", "From 52w high"], ["rsi", "RSI"], [scoreKey, view === "stable" ? "Stability" : "Rebound"],
+    [null, "90 days", "l"], [null, "Why", "l"],
+  ];
+  $("#tableCard").innerHTML = `<table><thead><tr>${cols.map(([k, l, c]) =>
+      `<th class="${c || ""}" ${k ? `data-k="${k}"` : ""}>${l}${k === key ? (asc ? " ↑" : " ↓") : ""}</th>`).join("")}</tr></thead>
+    <tbody>${rows.map(a => `<tr>
+      <td class="l"><span class="tk">${a.ticker}</span><span class="mk">${a.market}</span>${a.tags.map(t => `<span class="tag">${t}</span>`).join("")}</td>
+      <td>${price(a.price)}</td><td>${signed(a.chg_1d)}</td><td>${signed(a.chg_1m)}</td><td>${signed(a.chg_3m)}</td>
+      <td>${pct(a.drawdown, 0)}</td><td>${a.rsi.toFixed(0)}</td>
+      <td><span class="score">${a[scoreKey]}</span></td>
+      <td class="l">${spark(a)}</td><td class="l why">${why(a)}</td></tr>`).join("")}</tbody></table>`;
+  document.querySelectorAll("th[data-k]").forEach(th => th.onclick = () => {
+    const k = th.dataset.k;
+    sortAsc = sortKey === k ? !sortAsc : k === "ticker";
+    sortKey = k;
+    render();
+  });
+  bindSparkHover();
+}
+
+function renderAlerts() {
+  let r = alertRows.filter(a => !market || a.market === market);
+  const q = $("#q").value.trim().toUpperCase();
+  if (q) r = r.filter(a => a.ticker.includes(q));
+  $("#tableCard").innerHTML = r.length ? `<table><thead><tr><th class="l">When</th><th class="l">Asset</th><th class="l">Signal</th></tr></thead>
+    <tbody>${r.map(a => `<tr><td class="l">${new Date(a.ts).toLocaleString()}</td>
+      <td class="l"><span class="tk">${a.ticker}</span><span class="mk">${a.market}</span></td>
+      <td class="l why">${a.message}<div class="alert-ev">${a.event.replace(/_/g, " ")}</div></td></tr>`).join("")}</tbody></table>`
+    : `<div class="empty">No alerts yet. They'll appear here as markets move.</div>`;
+}
+
+function bindSparkHover() {
+  const tip = $("#tip");
+  document.querySelectorAll("svg.spark").forEach(svg => {
+    const a = assets.find(x => x.ticker === svg.dataset.t), s = a.spark, dot = svg.querySelector(".hl");
+    const pts = svg.querySelector("polyline").getAttribute("points").split(" ").map(p => p.split(",").map(Number));
+    svg.onmousemove = e => {
+      const r = svg.getBoundingClientRect();
+      const i = Math.max(0, Math.min(s.length - 1, Math.round((e.clientX - r.left - 2) / (r.width - 4) * (s.length - 1))));
+      dot.setAttribute("cx", pts[i][0]); dot.setAttribute("cy", pts[i][1]);
+      const daysAgo = s.length - 1 - i;
+      tip.textContent = `${a.ticker} ${price(s[i])} · ${daysAgo === 0 ? "latest" : daysAgo + " trading days ago"}`;
+      tip.style.display = "block"; tip.style.left = e.clientX + 12 + "px"; tip.style.top = e.clientY - 30 + "px";
+    };
+    svg.onmouseleave = () => { tip.style.display = "none"; dot.setAttribute("cx", -10); };
+  });
+}
+
+function render() { renderTiles(); renderTable(); }
+
+async function load() {
+  const [st, as, al] = await Promise.all(["/api/status", "/api/assets", "/api/alerts"].map(u => fetch(u).then(r => r.json())));
+  assets = as; alertRows = al;
+  const ls = st.last_scan;
+  $("#status").innerHTML =
+    `<span class="dot" style="background:${ls ? "var(--good)" : "var(--warn)"}"></span>` +
+    `Last scan <b>${ago(ls && ls.finished)}</b> · every ${st.interval_minutes} min · ${assets.length} assets · ` +
+    (st.discord_configured ? "Discord alerts <b>on</b>" : `<span style="color:var(--warn)">Discord not set up (add webhook to .env)</span>`) +
+    (ls && ls.missing && ls.missing.length ? ` · no data for ${ls.missing.join(", ")}` : "");
+  if (!$("#mktChips").children.length) {
+    $("#mktChips").innerHTML = st.markets.map(m => `<span class="chip" data-mkt="${m}">${m}</span>`).join(" ");
+    document.querySelectorAll(".chip").forEach(c => c.onclick = () => {
+      document.querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x === c));
+      market = c.dataset.mkt; render();
+    });
+  }
+  render();
+}
+
+$("#q").oninput = render;
+$("#scanBtn").onclick = async () => {
+  $("#scanBtn").textContent = "Scanning…"; $("#scanBtn").disabled = true;
+  await fetch("/api/scan", {method: "POST"});
+  setTimeout(async () => { await load(); $("#scanBtn").textContent = "Scan now"; $("#scanBtn").disabled = false; }, 20000);
+};
+$("#testBtn").onclick = async () => {
+  const r = await fetch("/api/test-discord", {method: "POST"}).then(r => r.json());
+  $("#testBtn").textContent = r.ok ? "Sent ✓" : "Failed — check .env";
+  setTimeout(() => $("#testBtn").textContent = "Test Discord", 3000);
+};
+load();
+setInterval(load, 60000);
+</script>
+</body>
+</html>
